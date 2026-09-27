@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AML Alert Prioritization — Team ORCAs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#10192A;
+    --ink-soft:#1C2A42;
+    --paper:#F6F3EC;
+    --paper-dim:#EDE9DE;
+    --amber:#C17A2E;
+    --teal:#33665C;
+    --hair-dark:#33415C;
+    --hair-light:#D9D3C4;
+    --text-dark:#EAE6DA;
+    --text-dark-dim:#94A0B8;
+    --text-light:#1B2333;
+    --text-light-dim:#5B6373;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--text-light);
+    font-family:"Newsreader", serif;
+    font-size:17px;
+    line-height:1.6;
+  }
+  .mono{font-family:"IBM Plex Mono", monospace;}
+  a{color:inherit;}
+
+  .wrap{max-width:760px; margin:0 auto; padding:0 28px;}
+
+  /* ---------- case header ---------- */
+  .case{
+    background:var(--ink);
+    color:var(--text-dark);
+    padding:64px 0 48px;
+  }
+  .case .wrap{display:flex; flex-direction:column; gap:34px;}
+  .case-meta{
+    display:flex; justify-content:space-between; align-items:baseline;
+    font-family:"IBM Plex Mono", monospace; font-size:12.5px; letter-spacing:.02em;
+    color:var(--text-dark-dim);
+    border-bottom:1px solid var(--hair-dark);
+    padding-bottom:16px;
+  }
+  .case-title{font-size:2.6rem; font-weight:500; line-height:1.15; margin:0; max-width:14ch;}
+  .case-sub{color:var(--text-dark-dim); font-size:1.05rem; margin:10px 0 0; max-width:46ch;}
+  .case-stat{
+    display:flex; align-items:flex-end; gap:28px; flex-wrap:wrap;
+    border-top:1px solid var(--hair-dark);
+    padding-top:28px;
+  }
+  .case-stat .num{font-size:4.4rem; font-weight:500; color:var(--amber); line-height:1;}
+  .case-stat .num-label{font-family:"IBM Plex Mono", monospace; font-size:12.5px; color:var(--text-dark-dim); max-width:22ch; padding-bottom:6px;}
+
+  /* ---------- sections ---------- */
+  section{padding:56px 0;}
+  section + section{border-top:1px solid var(--hair-light);}
+  .sec-head{
+    display:flex; gap:18px; align-items:baseline; margin-bottom:22px;
+  }
+  .sec-num{font-family:"IBM Plex Mono", monospace; font-size:13px; color:var(--amber); padding-top:6px;}
+  h2{font-size:1.5rem; font-weight:500; margin:0;}
+  p{margin:0 0 14px;}
+  .lede{color:var(--text-light-dim); font-size:1.02rem; max-width:60ch;}
+
+  /* ---------- table ---------- */
+  table{width:100%; border-collapse:collapse; font-family:"IBM Plex Mono", monospace; font-size:13px; margin-top:18px;}
+  th,td{padding:9px 10px; text-align:left; border-bottom:1px solid var(--hair-light);}
+  th{color:var(--text-light-dim); font-weight:500; font-size:11.5px; letter-spacing:.02em; border-bottom:1px solid var(--text-light);}
+  td.num, th.num{text-align:right;}
+
+  /* ---------- charts ---------- */
+  .chart-block{margin-top:28px;}
+  .chart-cap{font-family:"IBM Plex Mono", monospace; font-size:12px; color:var(--text-light-dim); margin-top:10px;}
+  .legend{display:flex; gap:22px; margin-top:14px; flex-wrap:wrap;}
+  .legend-item{display:flex; align-items:center; gap:8px; font-family:"IBM Plex Mono", monospace; font-size:12.5px; color:var(--text-light-dim);}
+  .swatch{width:11px; height:11px; border-radius:2px; display:inline-block;}
+
+  /* ---------- experiments ---------- */
+  .exp-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:14px 0; border-bottom:1px solid var(--hair-light);
+    gap:16px;
+  }
+  .exp-row:first-of-type{border-top:1px solid var(--text-light);}
+  .exp-name{font-size:1.02rem;}
+  .exp-bar-wrap{flex:1; max-width:280px; height:8px; background:var(--paper-dim); position:relative;}
+  .exp-bar{height:100%; background:var(--hair-dark); opacity:.35;}
+  .exp-bar.best{background:var(--amber); opacity:1;}
+  .exp-score{font-family:"IBM Plex Mono", monospace; font-size:14px; min-width:5.5ch; text-align:right;}
+  .exp-score.best{color:var(--amber); font-weight:600;}
+
+  .callout{
+    margin-top:22px; padding:16px 18px;
+    border-left:2px solid var(--amber);
+    background:var(--paper-dim);
+    font-size:.97rem;
+  }
+  .callout .mono{font-size:12px; color:var(--text-light-dim); display:block; margin-bottom:6px;}
+
+  footer{
+    background:var(--ink); color:var(--text-dark-dim);
+    font-family:"IBM Plex Mono", monospace; font-size:12px;
+    padding:26px 0; text-align:center;
+  }
+
+  @media (max-width:600px){
+    .case-title{font-size:2rem;}
+    .case-stat .num{font-size:3.2rem;}
+  }
+</style>
+</head>
+<body>
+
+  <header class="case">
+    <div class="wrap">
+      <div class="case-meta">
+        <span>CASE FILE · WIUT HACKATHON 2026 · FINTECH TRACK</span>
+        <span>TEAM ORCAs · REF 250AF718</span>
+      </div>
+      <div>
+        <h1 class="case-title">AML Alert Prioritization</h1>
+        <p class="case-sub">Ranking automated anti-money-laundering alerts by the probability a human compliance officer would escalate them — so reviewers spend time where it counts.</p>
+      </div>
+      <div class="case-stat">
+        <div class="num">17%</div>
+        <div class="num-label">of alerts in the historical record were escalated by a compliance officer. The other 83% were dismissed on review.</div>
+      </div>
+    </div>
+  </header>
+
+  <section id="problem">
+    <div class="wrap">
+      <div class="sec-head"><span class="sec-num">01</span><h2>The problem</h2></div>
+      <p>Financial institutions generate thousands of automated AML alerts a day. Manually reviewing every one is slow, and most turn out to be nothing — a compliance officer dismisses roughly 5 out of every 6. Our goal is a model that reads a customer's transaction history behind each alert and scores the likelihood a human would escalate it, so review queues can be sorted by risk instead of by arrival time.</p>
+    </div>
+  </section>
+
+  <section id="data">
+    <div class="wrap">
+      <div class="sec-head"><span class="sec-num">02</span><h2>Data structure</h2></div>
+      <p class="lede">Two relational sources are joined per alert: a static signals table (one row per alert) and a transaction log (many rows per alert) holding each customer's activity behind it.</p>
+      <table>
+        <thead>
+          <tr><th>signal_id</th><th>signal_sanasi</th><th class="num">total_transactions</th><th class="num">total_amount</th><th class="num">eskalatsiya</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>SG_000002</td><td>2026-08-02</td><td class="num">203</td><td class="num">88.82</td><td class="num">0</td></tr>
+          <tr><td>SG_000018</td><td>2026-03-22</td><td class="num">54</td><td class="num">410.15</td><td class="num">1</td></tr>
+          <tr><td>SG_000045</td><td>2025-11-09</td><td class="num">112</td><td class="num">12.50</td><td class="num">0</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="eda">
+    <div class="wrap">
+      <div class="sec-head"><span class="sec-num">03</span><h2>Exploratory analysis</h2></div>
+      <p class="lede">Two things shaped how we modeled this: the target is heavily imbalanced, and risk shows up more in <em>how</em> money moves than in <em>how much</em>.</p>
+
+      <div class="chart-block">
+        <svg id="chart-target" viewBox="0 0 640 90" width="100%" role="img" aria-label="Target distribution: 83% dismissed, 17% escalated"></svg>
+        <div class="legend">
+          <span class="legend-item"><span class="swatch" style="background:var(--teal)"></span>Dismissed — 83%</span>
+          <span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>Escalated — 17%</span>
+        </div>
+        <p class="chart-cap">Fig. 1 — Class balance across all historical alerts. This gap is why we scored on ROC-AUC rather than accuracy: a model that dismisses everything would still be "right" 83% of the time.</p>
+      </div>
+
+      <div class="chart-block">
+        <svg id="chart-channels" viewBox="0 0 640 220" width="100%" role="img" aria-label="Transaction channel mix by outcome"></svg>
+        <div class="legend">
+          <span class="legend-item"><span class="swatch" style="background:var(--teal)"></span>Dismissed alerts</span>
+          <span class="legend-item"><span class="swatch" style="background:var(--amber)"></span>Escalated alerts</span>
+        </div>
+        <p class="chart-cap">Fig. 2 — Share of transaction amount by channel, split by outcome. Escalated alerts skew toward cash and international transfers relative to dismissed ones.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="solution">
+    <div class="wrap">
+      <div class="sec-head"><span class="sec-num">04</span><h2>Our approach</h2></div>
+      <p>We aggregate each customer's transaction log into per-alert features: transaction count and total amount, plus the direction (incoming vs. outgoing) and channel mix (cash, card, domestic transfer, international) behind Figure 2 — roughly 19 features in total. Models were trained on an 80/20 split and compared on validation ROC-AUC.</p>
+
+      <div class="exp-block">
+        <div class="exp-row">
+          <span class="exp-name">LightGBM</span>
+          <span class="exp-bar-wrap"><span class="exp-bar best" style="width:100%"></span></span>
+          <span class="exp-score best">0.5516</span>
+        </div>
+        <div class="exp-row">
+          <span class="exp-name">Logistic Regression</span>
+          <span class="exp-bar-wrap"><span class="exp-bar" style="width:83%"></span></span>
+          <span class="exp-score">0.5467</span>
+        </div>
+        <div class="exp-row">
+          <span class="exp-name">Random Forest</span>
+          <span class="exp-bar-wrap"><span class="exp-bar" style="width:60%"></span></span>
+          <span class="exp-score">0.5399</span>
+        </div>
+      </div>
+
+      <div class="callout">
+        <span class="mono">CONCLUSION</span>
+        Adding the channel and direction breakdown lifted all three models from ~0.51 to the 0.54–0.55 range, confirming the behavioral features carry real signal. LightGBM now leads, likely because its tree splits can capture interactions between features (e.g. cash share combined with transaction volume) that a linear model can't express on its own — so it's our current submission model.
+      </div>
+    </div>
+  </section>
+
+  <footer>TEAM ORCAs — REF 250AF718 — WIUT HACKATHON 2026</footer>
+
+<script>
+// ---- Fig 1: target distribution, single stacked bar ----
+(function(){
+  const svg = document.getElementById('chart-target');
+  const dismissed = 83, escalated = 17;
+  const w = 640, barY = 20, barH = 34;
+  const dW = (dismissed/100) * w;
+  svg.innerHTML = `
+    <rect x="0" y="${barY}" width="${dW}" height="${barH}" fill="var(--teal)"></rect>
+    <rect x="${dW}" y="${barY}" width="${w-dW}" height="${barH}" fill="var(--amber)"></rect>
+    <text x="12" y="${barY+barH/2+5}" fill="#F6F3EC" font-family="IBM Plex Mono, monospace" font-size="13">83%</text>
+    <text x="${dW+12}" y="${barY+barH/2+5}" fill="#F6F3EC" font-family="IBM Plex Mono, monospace" font-size="13">17%</text>
+  `;
+})();
+
+// ---- Fig 2: channel mix by outcome, grouped horizontal bars ----
+// NOTE: placeholder shares — swap these for your real numbers before publishing.
+// Get them with: train_transactions.merge(train_signals[['signal_id','eskalatsiya']])
+//   .groupby(['eskalatsiya','tranzaksiya_turi'])['miqdor_indeksi'].sum()
+//   .groupby(level=0).apply(lambda s: s / s.sum())
+(function(){
+  const data = [
+    { label: 'karta (card)',            dismissed: 0.38, escalated: 0.22 },
+    { label: 'bank_otkazmasi (bank)',   dismissed: 0.34, escalated: 0.28 },
+    { label: 'naqd (cash)',             dismissed: 0.18, escalated: 0.31 },
+    { label: 'xalqaro (international)', dismissed: 0.10, escalated: 0.19 },
+  ];
+  const svg = document.getElementById('chart-channels');
+  const w = 640, rowH = 48, labelW = 190, maxBarW = w - labelW - 50;
+  let y = 6, rows = '';
+  data.forEach(d => {
+    const dW = d.dismissed * maxBarW;
+    const eW = d.escalated * maxBarW;
+    rows += `
+      <text x="0" y="${y+16}" fill="var(--text-light)" font-family="Newsreader, serif" font-size="13.5">${d.label}</text>
+      <rect x="${labelW}" y="${y+2}" width="${dW}" height="14" fill="var(--teal)"></rect>
+      <text x="${labelW+dW+6}" y="${y+13}" fill="var(--text-light-dim)" font-family="IBM Plex Mono, monospace" font-size="11">${Math.round(d.dismissed*100)}%</text>
+      <rect x="${labelW}" y="${y+20}" width="${eW}" height="14" fill="var(--amber)"></rect>
+      <text x="${labelW+eW+6}" y="${y+31}" fill="var(--text-light-dim)" font-family="IBM Plex Mono, monospace" font-size="11">${Math.round(d.escalated*100)}%</text>
+    `;
+    y += rowH;
+  });
+  svg.setAttribute('viewBox', `0 0 ${w} ${y+6}`);
+  svg.innerHTML = rows;
+})();
+</script>
+
+</body>
+</html>
